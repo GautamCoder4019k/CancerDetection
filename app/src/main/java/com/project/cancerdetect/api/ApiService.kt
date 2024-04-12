@@ -3,7 +3,6 @@ package com.project.cancerdetect.api
 import android.net.Uri
 import com.project.cancerdetect.CancerResponse
 import okhttp3.MultipartBody
-import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
