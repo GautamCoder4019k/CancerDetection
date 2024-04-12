@@ -15,10 +15,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import com.project.cancerdetect.api.RetrofitClient
 import com.project.cancerdetect.ui.theme.CancerDetectTheme
@@ -48,10 +52,10 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Response
 import java.io.File
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,22 +67,29 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainActivityScreen()
+                    MainActivityScreen(backPress = { backPressed() })
                 }
             }
         }
     }
 
+    private fun backPressed() {
+        onBackPressedDispatcher.onBackPressed()
+    }
 }
 
 
 @Composable
-fun MainActivityScreen() {
+fun MainActivityScreen(backPress: () -> Unit) {
     val context = LocalContext.current
+    var result by rememberSaveable { mutableStateOf<CancerResponse?>(null) }
     var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     var serverResponse by rememberSaveable { mutableStateOf<String?>(null) }  // State to hold the server response
 
+    var showDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
     val scope = rememberCoroutineScope()
 
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -87,9 +98,9 @@ fun MainActivityScreen() {
         uri?.let {
             imageUri = uri
             uploadImage(context, it, snackbarHostState, scope) { response ->
-                serverResponse = response // Update the state with the response
+                result = response
+                showDialog = true
             }
-            Log.d("RESPONSE",serverResponse.toString())
         }
     }
 
@@ -139,6 +150,23 @@ fun MainActivityScreen() {
                 style = TextStyle(fontSize = 20.sp, color = Color.Black)
             )
         }
+
+        if (showDialog) {
+            Dialog(onDismissRequest = { showDialog = !showDialog }) {
+                Card(
+                    modifier = Modifier.padding(20.dp),
+                    colors = CardDefaults.cardColors(Color.White)
+                ) {
+                    result?.let {
+                        Text(
+                            modifier = Modifier.padding(20.dp),
+                            text = it.res,
+                            style = TextStyle(fontSize = 20.sp, color = Color.Black)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -147,7 +175,7 @@ fun uploadImage(
     imageUri: Uri,
     snackbarHostState: SnackbarHostState,
     scope: CoroutineScope,
-    onResponse: (String) -> Unit
+    onResponse: (CancerResponse) -> Unit
 ) {
     val file = File(context.cacheDir, "upload.jpg").apply {
         context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
@@ -158,27 +186,35 @@ fun uploadImage(
     val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
     val body = MultipartBody.Part.createFormData("pic", file.name, requestFile)
 
-    RetrofitClient.apiService.uploadImage(body).enqueue(object : retrofit2.Callback<ResponseBody> {
-        override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-            scope.launch {
-                val responseBody = response.body()?.string() ?: "No response from server"
-                onResponse(responseBody)  // Pass the response to the composable
-                snackbarHostState.showSnackbar("Upload successful")
+    RetrofitClient.apiService.uploadImage(body)
+        .enqueue(object : retrofit2.Callback<CancerResponse> {
+            override fun onResponse(
+                call: Call<CancerResponse>,
+                response: Response<CancerResponse>
+            ) {
+                scope.launch {
+                    val responseBody = response.body()
+                    Log.d("@@@@@@@", response.message().toString())
+                    if (responseBody != null) {
+                        onResponse(responseBody)
+                    }
+                    snackbarHostState.showSnackbar("Upload successful")
+                }
             }
-        }
 
-        override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-            scope.launch {
-                snackbarHostState.showSnackbar("Upload failed: ${t.message}")
-                onResponse("Failed to upload image")  // Notify the composable of failure
+            override fun onFailure(call: Call<CancerResponse>, t: Throwable) {
+                Log.d("@@@@@@@", t.message.toString())
+                scope.launch {
+                    snackbarHostState.showSnackbar("Upload failed: ${t.message}")
+                    onResponse(CancerResponse("ERROR"))
+                }
             }
-        }
-    })
+        })
 }
 
 
 @Preview(showBackground = true)
 @Composable
 private fun MainActivityScreenPreview() {
-    MainActivityScreen()
+    MainActivityScreen({})
 }

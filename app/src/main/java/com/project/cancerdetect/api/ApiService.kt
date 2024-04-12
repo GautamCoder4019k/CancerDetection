@@ -1,6 +1,7 @@
 package com.project.cancerdetect.api
 
 import android.net.Uri
+import com.project.cancerdetect.CancerResponse
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Call
@@ -12,13 +13,13 @@ import retrofit2.http.Part
 
 interface ApiService {
     @Multipart
-    @POST("showresult")
-    fun uploadImage(@Part image: MultipartBody.Part): Call<ResponseBody>
+    @POST("result")
+    fun uploadImage(@Part image: MultipartBody.Part): Call<CancerResponse>
 }
 
 object RetrofitClient {
     val retrofit = Retrofit.Builder()
-        .baseUrl("http://<your-server-ip>:5000/") // Replace with your actual IP and port
+        .baseUrl("http://192.168.39.64:5000/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
