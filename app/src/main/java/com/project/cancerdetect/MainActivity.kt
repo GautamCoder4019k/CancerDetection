@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.project.cancerdetect.api.RetrofitClient
 import com.project.cancerdetect.ui.theme.CancerDetectTheme
 import kotlinx.coroutines.CoroutineScope
@@ -55,6 +57,10 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.Call
 import retrofit2.Response
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.Objects
 
 
 class MainActivity : ComponentActivity() {
@@ -67,25 +73,21 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainActivityScreen(backPress = { backPressed() })
+                    MainActivityScreen()
                 }
             }
         }
     }
 
-    private fun backPressed() {
-        onBackPressedDispatcher.onBackPressed()
-    }
 }
 
 
 @Composable
-fun MainActivityScreen(backPress: () -> Unit) {
+fun MainActivityScreen() {
     val context = LocalContext.current
     var result by rememberSaveable { mutableStateOf<CancerResponse?>(null) }
     var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
-    var serverResponse by rememberSaveable { mutableStateOf<String?>(null) }  // State to hold the server response
 
     var showDialog by rememberSaveable {
         mutableStateOf(false)
@@ -117,6 +119,36 @@ fun MainActivityScreen(backPress: () -> Unit) {
         }
     )
 
+    val file = createImageFile(context)
+    val uri = FileProvider.getUriForFile(
+        Objects.requireNonNull(context),
+        BuildConfig.APPLICATION_ID + ".provider", file
+    )
+
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
+        imageUri = uri
+        uploadImage(context, uri, snackbarHostState, scope) { response ->
+            result = response
+            showDialog = true
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            scope.launch {
+                snackbarHostState.showSnackbar("Permission Granted")
+            }
+            cameraLauncher.launch(uri)
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar("Permission Denied")
+            }
+        }
+    }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -147,6 +179,34 @@ fun MainActivityScreen(backPress: () -> Unit) {
             )
             Text(
                 text = "Click here to Upload Image",
+                style = TextStyle(fontSize = 20.sp, color = Color.Black)
+            )
+        }
+
+        Button(
+            onClick = {
+                val permissionCheckResult =
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.CAMERA
+                    )
+                if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
+                    cameraLauncher.launch(uri)
+                } else {
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }
+            },
+            colors = ButtonDefaults.buttonColors(Color.White),
+            shape = RoundedCornerShape(0)
+        ) {
+            Icon(
+                modifier = Modifier.size(120.dp),
+                tint = Color.Black,
+                painter = painterResource(id = R.drawable.baseline_camera_alt_24),
+                contentDescription = null
+            )
+            Text(
+                text = "Click here to Capture Image",
                 style = TextStyle(fontSize = 20.sp, color = Color.Black)
             )
         }
@@ -212,9 +272,18 @@ fun uploadImage(
         })
 }
 
+fun createImageFile(context: Context): File {
+    val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    return File.createTempFile(
+        "JPEG_${timeStamp}_",
+        ".jpg",
+        storageDir
+    )
+}
 
 @Preview(showBackground = true)
 @Composable
 private fun MainActivityScreenPreview() {
-    MainActivityScreen({})
+    MainActivityScreen()
 }
