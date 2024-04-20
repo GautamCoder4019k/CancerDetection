@@ -1,4 +1,4 @@
-package com.project.cancerdetect
+package com.project.cancerdetect.model
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

@@ -1,32 +1,23 @@
-package com.project.cancerdetect
+package com.project.cancerdetect.dashboard
 
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.os.Environment
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,8 +37,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.project.cancerdetect.component.AppTopBar
+import com.project.cancerdetect.BuildConfig
+import com.project.cancerdetect.model.CancerResponse
+import com.project.cancerdetect.component.FabButton
+import com.project.cancerdetect.component.FabButtonState
+import com.project.cancerdetect.component.FabType
+import com.project.cancerdetect.component.MultipleFAB
+import com.project.cancerdetect.R
 import com.project.cancerdetect.api.RetrofitClient
-import com.project.cancerdetect.ui.theme.CancerDetectTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -62,32 +59,13 @@ import java.util.Date
 import java.util.Locale
 import java.util.Objects
 
-
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            CancerDetectTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MainActivityScreen()
-                }
-            }
-        }
-    }
-
-}
-
-
 @Composable
-fun MainActivityScreen() {
+fun DashboardScreen() {
     val context = LocalContext.current
     var result by rememberSaveable { mutableStateOf<CancerResponse?>(null) }
     var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+    var fabButtonState by remember { mutableStateOf<FabButtonState>(FabButtonState.Collapsed) }
 
     var showDialog by rememberSaveable {
         mutableStateOf(false)
@@ -125,7 +103,6 @@ fun MainActivityScreen() {
         BuildConfig.APPLICATION_ID + ".provider", file
     )
 
-
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
         imageUri = uri
         uploadImage(context, uri, snackbarHostState, scope) { response ->
@@ -149,80 +126,76 @@ fun MainActivityScreen() {
         }
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Color.White),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Button(
-            onClick = {
-                if (ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED || Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                ) {
-                    galleryLauncher.launch("image/*")
-                } else {
-                    storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-                }
-            },
-            colors = ButtonDefaults.buttonColors(Color.White),
-            shape = RoundedCornerShape(0)
-        ) {
-            Icon(
-                modifier = Modifier.size(120.dp),
-                tint = Color.Black,
-                painter = painterResource(id = R.drawable.baseline_image_24),
-                contentDescription = null
-            )
-            Text(
-                text = "Click here to Upload Image",
-                style = TextStyle(fontSize = 20.sp, color = Color.Black)
-            )
-        }
-
-        Button(
-            onClick = {
-                val permissionCheckResult =
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.CAMERA
+    Scaffold(
+        topBar = { AppTopBar(topBarTitle = R.string.dashboard) },
+        floatingActionButton = {
+            MultipleFAB(
+                fabButtons = listOf(
+                    FabButton(
+                        fabType = FabType.CAMERA,
+                        iconRes = R.drawable.baseline_camera_alt_24
+                    ),
+                    FabButton(
+                        fabType = FabType.GALLERY,
+                        iconRes = R.drawable.baseline_image_24
                     )
-                if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
-                    cameraLauncher.launch(uri)
-                } else {
-                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                ),
+                fabButtonState = fabButtonState,
+                onFabButtonStateChange = {
+                    fabButtonState = it
+                },
+                onFabClick = {
+                    when (it) {
+                        FabType.CAMERA -> {
+                            val permissionCheckResult =
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.CAMERA
+                                )
+                            if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
+                                cameraLauncher.launch(uri)
+                            } else {
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        }
+
+                        FabType.GALLERY -> {
+                            if (ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.READ_EXTERNAL_STORAGE
+                                ) == PackageManager.PERMISSION_GRANTED || Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                            ) {
+                                galleryLauncher.launch("image/*")
+                            } else {
+                                storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                            }
+                        }
+                    }
                 }
-            },
-            colors = ButtonDefaults.buttonColors(Color.White),
-            shape = RoundedCornerShape(0)
-        ) {
-            Icon(
-                modifier = Modifier.size(120.dp),
-                tint = Color.Black,
-                painter = painterResource(id = R.drawable.baseline_camera_alt_24),
-                contentDescription = null
-            )
-            Text(
-                text = "Click here to Capture Image",
-                style = TextStyle(fontSize = 20.sp, color = Color.Black)
             )
         }
-
-        if (showDialog) {
-            Dialog(onDismissRequest = { showDialog = !showDialog }) {
-                Card(
-                    modifier = Modifier.padding(20.dp),
-                    colors = CardDefaults.cardColors(Color.White)
-                ) {
-                    result?.let {
-                        Text(
-                            modifier = Modifier.padding(20.dp),
-                            text = it.res,
-                            style = TextStyle(fontSize = 20.sp, color = Color.Black)
-                        )
+    ) { contentPadding ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(contentPadding),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (showDialog) {
+                Dialog(onDismissRequest = { showDialog = !showDialog }) {
+                    Card(
+                        modifier = Modifier.padding(20.dp),
+                        colors = CardDefaults.cardColors(Color.White)
+                    ) {
+                        result?.let {
+                            Text(
+                                modifier = Modifier.padding(20.dp),
+                                text = it.res,
+                                style = TextStyle(fontSize = 20.sp, color = Color.Black)
+                            )
+                        }
                     }
                 }
             }
@@ -284,6 +257,6 @@ fun createImageFile(context: Context): File {
 
 @Preview(showBackground = true)
 @Composable
-private fun MainActivityScreenPreview() {
-    MainActivityScreen()
+private fun DashboardScreenPreview() {
+    DashboardScreen()
 }

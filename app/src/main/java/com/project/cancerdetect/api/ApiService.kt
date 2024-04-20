@@ -1,7 +1,6 @@
 package com.project.cancerdetect.api
 
-import android.net.Uri
-import com.project.cancerdetect.CancerResponse
+import com.project.cancerdetect.model.CancerResponse
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.Retrofit
@@ -18,7 +17,7 @@ interface ApiService {
 
 object RetrofitClient {
     val retrofit = Retrofit.Builder()
-        .baseUrl("http://192.168.39.64:5000/")
+        .baseUrl("http://192.168.151.64:5000/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
