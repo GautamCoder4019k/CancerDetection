@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">CancerDetect</string>
     <string name="dashboard">Dashboard</string>
+    <string name="no_recent_activity">No Recent Activity</string>
 </resources>

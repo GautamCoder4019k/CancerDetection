@@ -17,7 +17,7 @@ interface ApiService {
 
 object RetrofitClient {
     val retrofit = Retrofit.Builder()
-        .baseUrl("http://192.168.151.64:5000/")
+        .baseUrl("http://<your_ip>:5000/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 

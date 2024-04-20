@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Scaffold
@@ -21,6 +23,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -37,15 +41,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import com.project.cancerdetect.component.AppTopBar
 import com.project.cancerdetect.BuildConfig
-import com.project.cancerdetect.model.CancerResponse
+import com.project.cancerdetect.R
+import com.project.cancerdetect.api.RetrofitClient
+import com.project.cancerdetect.component.AppTopBar
+import com.project.cancerdetect.component.EmptyView
 import com.project.cancerdetect.component.FabButton
 import com.project.cancerdetect.component.FabButtonState
 import com.project.cancerdetect.component.FabType
 import com.project.cancerdetect.component.MultipleFAB
-import com.project.cancerdetect.R
-import com.project.cancerdetect.api.RetrofitClient
+import com.project.cancerdetect.model.CancerResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -63,6 +68,7 @@ import java.util.Objects
 fun DashboardScreen() {
     val context = LocalContext.current
     var result by rememberSaveable { mutableStateOf<CancerResponse?>(null) }
+    val list = remember { mutableStateListOf<String>() }
     var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     var fabButtonState by remember { mutableStateOf<FabButtonState>(FabButtonState.Collapsed) }
@@ -79,6 +85,7 @@ fun DashboardScreen() {
             imageUri = uri
             uploadImage(context, it, snackbarHostState, scope) { response ->
                 result = response
+                list.add(result!!.res)
                 showDialog = true
             }
         }
@@ -107,6 +114,7 @@ fun DashboardScreen() {
         imageUri = uri
         uploadImage(context, uri, snackbarHostState, scope) { response ->
             result = response
+            list.add(result!!.res)
             showDialog = true
         }
     }
@@ -183,21 +191,31 @@ fun DashboardScreen() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (showDialog) {
-                Dialog(onDismissRequest = { showDialog = !showDialog }) {
-                    Card(
-                        modifier = Modifier.padding(20.dp),
-                        colors = CardDefaults.cardColors(Color.White)
-                    ) {
-                        result?.let {
-                            Text(
-                                modifier = Modifier.padding(20.dp),
-                                text = it.res,
-                                style = TextStyle(fontSize = 20.sp, color = Color.Black)
-                            )
+
+            if (list.isNotEmpty()) {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(list) {
+                        DashboardListElement(text = it)
+                    }
+                }
+                if (showDialog) {
+                    Dialog(onDismissRequest = { showDialog = !showDialog }) {
+                        Card(
+                            modifier = Modifier.padding(20.dp),
+                            colors = CardDefaults.cardColors(Color.White)
+                        ) {
+                            result?.let {
+                                Text(
+                                    modifier = Modifier.padding(20.dp),
+                                    text = it.res,
+                                    style = TextStyle(fontSize = 20.sp, color = Color.Black)
+                                )
+                            }
                         }
                     }
                 }
+            } else {
+                EmptyView(icon = R.drawable.empty, text = R.string.no_recent_activity)
             }
         }
     }
