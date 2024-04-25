@@ -1,5 +1,7 @@
 package com.project.cancerdetect.dashboard
 
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -16,6 +18,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,7 +36,9 @@ import coil.compose.rememberAsyncImagePainter
 
 @Composable
 fun DashboardListElement(text: String, uri: Uri?, infoText: String, color: Color) {
+    val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
+    val  url = "https://www.google.com/maps/search/oncologist+near+me"
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -67,6 +73,9 @@ fun DashboardListElement(text: String, uri: Uri?, infoText: String, color: Color
                     text = infoText,
                     style = TextStyle(fontSize = 20.sp, color = Color.Black)
                 )
+                TextButton(onClick = { openUrlInBrowser(context, url) }) {
+                    Text(text = "Click to know more", color = Color.White)
+                }
             }
             uri?.let {
                 Image(
@@ -79,6 +88,17 @@ fun DashboardListElement(text: String, uri: Uri?, infoText: String, color: Color
                 )
             }
         }
+    }
+}
+
+fun openUrlInBrowser(context: Context, url: String) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse(url)
+        }
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 

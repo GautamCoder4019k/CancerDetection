@@ -6,8 +6,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
-import com.project.cancerdetect.dashboard.DashboardActivity
 import com.project.cancerdetect.databinding.ActivitySplashBinding
+import com.project.cancerdetect.login.LoginActivity
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
@@ -21,9 +21,9 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         Handler(Looper.getMainLooper()).postDelayed({
-            val intent = Intent(this, DashboardActivity::class.java)
+            val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
             finish()
-        }, 2000) // 3000 is the delayed time in milliseconds.
+        }, 2000)
     }
 }

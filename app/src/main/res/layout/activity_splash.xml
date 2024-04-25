@@ -7,10 +7,14 @@
     android:fitsSystemWindows="true"
     tools:context=".splash.SplashActivity">
 
+<!--    replace src with your app image-->
+
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:src="@drawable/ic_launcher_foreground"/>
+
+<!--    add text view for app name-->
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
