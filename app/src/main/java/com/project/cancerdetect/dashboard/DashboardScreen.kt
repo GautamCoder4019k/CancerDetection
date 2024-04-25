@@ -148,7 +148,7 @@ fun DashboardScreen() {
     Scaffold(
         topBar = {
             Column {
-                AppTopBar(topBarTitle = R.string.cancer_detect)
+                AppTopBar(topBarTitle = R.string.cancer_detect) // add modifier to bring it to center
                 AppTopBar(topBarTitle = R.string.dashboard)
             }
         },
@@ -292,14 +292,6 @@ fun createImageFile(context: Context): File {
         ".jpg",
         storageDir
     )
-}
-
-fun parseCondition(input: String): String {
-    return when {
-        "Cancer" in input -> "Cancerous"
-        "Non-Cancerous" in input -> "Non-Cancerous"
-        else -> "Unknown"
-    }
 }
 
 @Preview(showBackground = true)
