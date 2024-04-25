@@ -145,9 +145,13 @@ fun DashboardScreen() {
             }
         }
     }
-
     Scaffold(
-        topBar = { AppTopBar(topBarTitle = R.string.dashboard) },
+        topBar = {
+            Column {
+                AppTopBar(topBarTitle = R.string.cancer_detect)
+                AppTopBar(topBarTitle = R.string.dashboard)
+            }
+        },
         floatingActionButton = {
             MultipleFAB(
                 fabButtons = listOf(
