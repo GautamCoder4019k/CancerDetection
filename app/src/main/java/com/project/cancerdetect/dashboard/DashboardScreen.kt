@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -67,16 +66,15 @@ import java.util.Objects
 @Composable
 fun DashboardScreen() {
     val context = LocalContext.current
-    var result by rememberSaveable { mutableStateOf<CancerResponse?>(null) }
-    val list = remember { mutableStateListOf<String>() }
-    var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    val scope = rememberCoroutineScope()
+
+    val list = remember { mutableStateListOf<CancerResponse?>() }
+
+    var result by remember { mutableStateOf<CancerResponse?>(null) }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     var fabButtonState by remember { mutableStateOf<FabButtonState>(FabButtonState.Collapsed) }
-
-    var showDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-    val scope = rememberCoroutineScope()
+    var showDialog by rememberSaveable { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -85,7 +83,14 @@ fun DashboardScreen() {
             imageUri = uri
             uploadImage(context, it, snackbarHostState, scope) { response ->
                 result = response
-                list.add(result!!.res)
+                list.add(
+                    CancerResponse(
+                        res = result!!.res,
+                        uri = uri,
+                        info = result!!.info,
+                        cancerType = result!!.cancerType
+                    )
+                )
                 showDialog = true
             }
         }
@@ -114,7 +119,14 @@ fun DashboardScreen() {
         imageUri = uri
         uploadImage(context, uri, snackbarHostState, scope) { response ->
             result = response
-            list.add(result!!.res)
+            list.add(
+                CancerResponse(
+                    res = result!!.res,
+                    uri = imageUri,
+                    info = result!!.info,
+                    cancerType = result!!.cancerType
+                )
+            )
             showDialog = true
         }
     }
@@ -195,7 +207,12 @@ fun DashboardScreen() {
             if (list.isNotEmpty()) {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(list) {
-                        DashboardListElement(text = it)
+                        DashboardListElement(
+                            text = it!!.res,
+                            uri = it.uri,
+                            infoText = it.info,
+                            color = Color(it.color)
+                        )
                     }
                 }
                 if (showDialog) {
@@ -245,7 +262,7 @@ fun uploadImage(
             ) {
                 scope.launch {
                     val responseBody = response.body()
-                    Log.d("@@@@@@@", response.message().toString())
+                    Log.d("@@@@@@@", responseBody.toString())
                     if (responseBody != null) {
                         onResponse(responseBody)
                     }
@@ -257,7 +274,7 @@ fun uploadImage(
                 Log.d("@@@@@@@", t.message.toString())
                 scope.launch {
                     snackbarHostState.showSnackbar("Upload failed: ${t.message}")
-                    onResponse(CancerResponse("ERROR"))
+                    onResponse(CancerResponse("ERROR", null, "", ""))
                 }
             }
         })
@@ -271,6 +288,14 @@ fun createImageFile(context: Context): File {
         ".jpg",
         storageDir
     )
+}
+
+fun parseCondition(input: String): String {
+    return when {
+        "Cancer" in input -> "Cancerous"
+        "Non-Cancerous" in input -> "Non-Cancerous"
+        else -> "Unknown"
+    }
 }
 
 @Preview(showBackground = true)

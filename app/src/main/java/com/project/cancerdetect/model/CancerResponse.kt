@@ -1,9 +1,14 @@
 package com.project.cancerdetect.model
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
+import android.graphics.Color
+import android.net.Uri
 
-@Parcelize
 data class CancerResponse(
-    val res: String
-): Parcelable
+    val res: String,
+    val uri: Uri? = null,
+    val info: String,
+    val cancerType: String
+) {
+    val color: Int
+        get() = if (cancerType.equals("Cancerous")) Color.RED else Color.GREEN
+}
