@@ -38,6 +38,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".login.LoginActivity"/>
+        <activity android:name=".signup.SignupActivity"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"

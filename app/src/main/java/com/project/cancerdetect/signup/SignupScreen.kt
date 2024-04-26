@@ -1,4 +1,4 @@
-package com.project.cancerdetect.login
+package com.project.cancerdetect.signup
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -58,14 +58,14 @@ import com.project.cancerdetect.R
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun LoginScreen(
-    logInViewModel: LogInViewModel = viewModel(),
-    onLoginSuccess: () -> Unit,
-    onSignUpClicked: () -> Unit
+fun SignupScreen(
+    signupViewModel: SignupViewModel = viewModel(),
+    onSignupSuccess: () -> Unit,
+    onSigninClicked: () -> Unit = {}
 ) {
 
     val keyboardController = LocalSoftwareKeyboardController.current
-    var loginStatus by logInViewModel.loginStatus
+    var signupStatus by signupViewModel.signupStatus
     var username by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(
             TextFieldValue("")
@@ -76,24 +76,33 @@ fun LoginScreen(
             TextFieldValue("")
         )
     }
+    var confirmPassword by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(
+            TextFieldValue("")
+        )
+    }
 
 
     var passwordVisibility: Boolean by rememberSaveable { mutableStateOf(false) }
+    var confirmPasswordVisibility: Boolean by rememberSaveable { mutableStateOf(false) }
 
     var usernameError by rememberSaveable { mutableStateOf(false) }
     var passwordError by rememberSaveable { mutableStateOf(false) }
+    var confirmPasswordError by rememberSaveable { mutableStateOf(false) }
 
-    when (loginStatus) {
+    when (signupStatus) {
         true -> {
             usernameError = false
             passwordError = false
-            onLoginSuccess()
-            loginStatus = null
+            confirmPasswordError=false
+            onSignupSuccess()
+            signupStatus = null
         }
 
         false -> {
             usernameError = true
             passwordError = true
+            confirmPasswordError=true
         }
 
         null -> {
@@ -153,19 +162,45 @@ fun LoginScreen(
             },
             error = passwordError
         )
+        MifosOutlinedTextField(
+            value = confirmPassword,
+            onValueChange = {
+                confirmPassword = it
+                confirmPasswordError = confirmPassword.text != password.text
+            },
+            label = R.string.confirm_password,
+            icon = R.drawable.baseline_lock_24,
+            visualTransformation = if (confirmPasswordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                if (!confirmPasswordError) {
+                    val image = if (confirmPasswordVisibility)
+                        Icons.Filled.Visibility
+                    else Icons.Filled.VisibilityOff
+                    IconButton(onClick = {
+                        confirmPasswordVisibility = !confirmPasswordVisibility
+                    }) {
+                        Icon(imageVector = image, null)
+                    }
+                } else {
+                    Icon(imageVector = Icons.Filled.Error, contentDescription = null)
+                }
+            },
+            error = confirmPasswordError
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = {
-                if (username.text.isNotBlank() && password.text.isNotBlank()) {
-                    logInViewModel.loginWithEmailAndPassword(
+                if (username.text.isNotBlank() && password.text.isNotBlank() && (confirmPassword.text == password.text)) {
+                    signupViewModel.signupWithEmailAndPassword(
                         email = username.text,
                         password = password.text
                     )
                 } else {
                     usernameError = true
                     passwordError = true
+                    confirmPasswordError = true
                 }
 
                 keyboardController?.hide()
@@ -180,7 +215,7 @@ fun LoginScreen(
                 ) else Color(0xFF325ca8)
             )
         ) {
-            Text(text = stringResource(R.string.login))
+            Text(text = stringResource(R.string.signup))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -211,7 +246,7 @@ fun LoginScreen(
         }
 
         TextButton(
-            onClick = onSignUpClicked,
+            onClick = onSigninClicked,
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.CenterHorizontally),
@@ -221,7 +256,7 @@ fun LoginScreen(
                 ) else Color(0xFF325ca8)
             )
         ) {
-            Text(text = stringResource(R.string.create_account))
+            Text(text = stringResource(R.string.already_have_a_account))
         }
     }
 }
@@ -288,5 +323,5 @@ fun MifosOutlinedTextField(
 @Preview
 @Composable
 private fun LoginScreenPreview() {
-    LoginScreen(onLoginSuccess = {}, onSignUpClicked = {})
+    SignupScreen(onSignupSuccess = {})
 }

@@ -1,4 +1,4 @@
-package com.project.cancerdetect.login
+package com.project.cancerdetect.signup
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,11 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.project.cancerdetect.dashboard.DashboardActivity
-import com.project.cancerdetect.signup.SignupActivity
+import com.project.cancerdetect.login.LoginActivity
 import com.project.cancerdetect.ui.theme.CancerDetectTheme
 
-class LoginActivity : ComponentActivity() {
+class SignupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -21,20 +20,19 @@ class LoginActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-
-                    LoginScreen(
-                        onLoginSuccess = {
+                    SignupScreen(
+                        onSignupSuccess = {
                             startActivity(
                                 Intent(
                                     this,
-                                    DashboardActivity::class.java
+                                    LoginActivity::class.java
                                 )
                             )
                         },
-                        onSignUpClicked = {
+                        onSigninClicked = {
                             startActivity(
                                 Intent(
-                                    this,SignupActivity::class.java
+                                    this, LoginActivity::class.java
                                 )
                             )
                         }
