@@ -1,5 +1,6 @@
 package com.project.cancerdetect.login
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import com.project.cancerdetect.dashboard.DashboardActivity
 import com.project.cancerdetect.ui.theme.CancerDetectTheme
 
 class LoginActivity : ComponentActivity() {
@@ -18,7 +20,15 @@ class LoginActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    LoginScreen()
+
+                    LoginScreen(onLoginSuccess = {
+                        startActivity(
+                            Intent(
+                                this,
+                                DashboardActivity::class.java
+                            )
+                        )
+                    })
                 }
             }
         }

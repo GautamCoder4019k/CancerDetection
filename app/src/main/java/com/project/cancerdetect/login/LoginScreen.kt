@@ -53,14 +53,15 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.project.cancerdetect.R
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun LoginScreen() {
+fun LoginScreen(logInViewModel: LogInViewModel = viewModel(), onLoginSuccess: () -> Unit) {
 
     val keyboardController = LocalSoftwareKeyboardController.current
-
+    var loginStatus by logInViewModel.loginStatus
     var username by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(
             TextFieldValue("")
@@ -72,10 +73,29 @@ fun LoginScreen() {
         )
     }
 
+
     var passwordVisibility: Boolean by rememberSaveable { mutableStateOf(false) }
 
     var usernameError by rememberSaveable { mutableStateOf(false) }
     var passwordError by rememberSaveable { mutableStateOf(false) }
+
+    when (loginStatus) {
+        true -> {
+            usernameError = false
+            passwordError = false
+            onLoginSuccess()
+            loginStatus = null
+        }
+
+        false -> {
+            usernameError = true
+            passwordError = true
+        }
+
+        null -> {
+
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -134,12 +154,16 @@ fun LoginScreen() {
 
         Button(
             onClick = {
-                when {
-                    else -> {
-                        passwordError = true
-                        usernameError = true
-                    }
+                if (username.text.isNotBlank() && password.text.isNotBlank()) {
+                    logInViewModel.loginWithEmailAndPassword(
+                        email = username.text,
+                        password = password.text
+                    )
+                } else {
+                    usernameError = true
+                    passwordError = true
                 }
+
                 keyboardController?.hide()
             },
             modifier = Modifier
@@ -260,5 +284,5 @@ fun MifosOutlinedTextField(
 @Preview
 @Composable
 private fun LoginScreenPreview() {
-    LoginScreen()
+    LoginScreen(onLoginSuccess = {})
 }
